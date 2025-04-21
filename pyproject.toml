@@ -1,0 +1,46 @@
+[build-system]
+requires = [
+    "setuptools>=42",
+    "wheel",
+    "versioneer",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "amulet-io"
+authors = [
+    {name = "James Clare"},
+]
+description = "A tiny C++ header-only binary reader and writer library."
+dynamic = ["version", "readme"]
+requires-python = ">=3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
+[project.optional-dependencies]
+dev = [
+    "setuptools>=42",
+    "versioneer",
+    "wheel",
+    "pybind11[global]==2.13.6",
+    "black>=22.3",
+]
+
+[project.urls]
+Homepage = "https://www.amuletmc.com"
+Repository = "https://github.com/Amulet-Team/Amulet-IO"
+Issues = "https://github.com/Amulet-Team/Amulet-IO/issues"
+
+[tool.setuptools]
+include-package-data = false
+
+[tool.setuptools.package-data]
+"*" = [
+    "*Config.cmake",
+    "**/*.hpp",
+]
+
+[tool.setuptools.dynamic]
+readme = {file = ["README.md"], content-type = "text/markdown"}
