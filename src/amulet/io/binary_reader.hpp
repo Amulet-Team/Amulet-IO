@@ -88,12 +88,12 @@ public:
     }
 
     /*
-     * Read the number of bytes and decode before returning.
+     * Read the number of bytes.
      *
      * @param length The number of bytes to read.
-     * @return The decoded string.
+     * @return The bytes.
      */
-    std::string read_string(size_t length)
+    std::string_view read_bytes(size_t length)
     {
         // Ensure the buffer is long enough
         if (position + length > buffer.size()) {
@@ -102,26 +102,42 @@ public:
 
         std::string_view value = buffer.substr(position, length);
         position += length;
-        return string_decoder(value);
+        return value;
     }
 
     /*
-     * Read an unsigned 64 bit integer followed by that many bytes.
+     * Read the number of bytes and decode before returning.
+     *
+     * @param length The number of bytes to read.
+     * @return The decoded string.
+     */
+    std::string read_string(size_t length)
+    {
+        return string_decoder(read_bytes(length));
+    }
+
+    /*
+     * Read a size followed by that many bytes.
      *
      * @return A string_view to the bytes.
      */
+    template <typename SizeT = std::uint64_t>
     std::string_view read_size_and_bytes()
     {
-        std::uint64_t length;
-        read_numeric_into<std::uint64_t>(length);
-        // Ensure the buffer is long enough
-        if (position + length > buffer.size()) {
-            throw std::out_of_range("Cannot read string of length " + std::to_string(length) + " at position " + std::to_string(position));
-        }
+        SizeT length;
+        read_numeric_into<SizeT>(length);
+        return read_bytes(length);
+    }
 
-        std::string_view value = buffer.substr(position, length);
-        position += length;
-        return value;
+    /*
+     * Read a size followed by that many bytes and return the decoded value.
+     *
+     * @return A string decoded from the bytes.
+     */
+    template <typename SizeT = std::uint64_t>
+    std::string read_size_and_string()
+    {
+        return string_decoder(read_size_and_bytes<SizeT>());
     }
 
     // Get the current read position.

@@ -7,6 +7,7 @@
 #include <functional>
 #include <iostream>
 #include <string>
+#include <limits>
 
 namespace Amulet {
 
@@ -55,17 +56,34 @@ public:
         return string_encoder(value);
     }
 
-    // Write a string without encoding or prefixing a size.
+    // Write bytes without prefixing a size.
     void write_bytes(const std::string& value)
     {
         data.append(value);
     }
 
-    // Write the bytes to the buffer with a prefixed unsigned 64 bit integer size.
-    void writeSizeAndBytes(const std::string& value)
+    // Write a string without prefixing a size.
+    void write_string(const std::string& value)
     {
-        writeNumeric<std::uint64_t>(value.size());
-        data.append(value);
+        write_bytes(string_encoder(value));
+    }
+
+    // Write the bytes to the buffer with a prefixed size.
+    template <typename SizeT = std::uint64_t>
+    void write_size_and_bytes(const std::string& value)
+    {
+        if (std::numeric_limits<SizeT>::max() < value.size()) {
+            throw std::runtime_error("value is to large for the given size type.");
+        }
+        write_numeric<SizeT>(static_cast<SizeT>(value.size()));
+        write_bytes(value);
+    }
+
+    // Encode and write a string to the buffer with a prefixed size.
+    template <typename SizeT = std::uint64_t>
+    void write_size_and_string(const std::string& value)
+    {
+        write_size_and_bytes<SizeT>(string_encoder(value));
     }
 
     // Get the written buffer.
@@ -75,15 +93,13 @@ public:
     }
 };
 
-} // namespace Amulet
-
-
 // Utility function to searialise an object.
 template <typename T>
 std::string serialise(const T& obj)
 {
     BinaryWriter writer;
     obj.serialise(writer);
-    return writer.getBuffer();
+    return writer.get_buffer();
 }
-}
+
+} // namespace Amulet
