@@ -1,6 +1,12 @@
 from unittest import TestCase
 
-from _test_amulet_io import test_read_numeric, test_read_string, EndianState, test_write_numeric, test_write_string
+from _test_amulet_io import (
+    EndianState,
+    test_read_numeric,
+    test_read_string,
+    test_write_numeric,
+    test_write_string,
+)
 
 
 class AmuletIOTestCase(TestCase):
@@ -8,7 +14,11 @@ class AmuletIOTestCase(TestCase):
         for endian_state in (EndianState.Default, EndianState.Little, EndianState.Big):
             for read_offset in (False, True):
                 for read_into in (False, True):
-                    with self.subTest(endian_state=endian_state, read_offset=read_offset, read_into=read_into):
+                    with self.subTest(
+                        endian_state=endian_state,
+                        read_offset=read_offset,
+                        read_into=read_into,
+                    ):
                         test_read_numeric(endian_state, read_offset, read_into)
                 with self.subTest(endian_state=endian_state, read_offset=read_offset):
                     test_read_string(endian_state, read_offset)
