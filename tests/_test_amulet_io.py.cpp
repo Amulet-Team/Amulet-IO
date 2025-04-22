@@ -241,6 +241,74 @@ void test_read_string(EndianState endian, bool read_offset)
     }
 }
 
+void test_read_overflow()
+{
+    {
+        std::string value("", 0);
+        size_t index = 0;
+        Amulet::BinaryReader reader(value, index);
+        std::uint32_t int32 = 0;
+        ASSERT_RAISES(std::out_of_range, reader.read_numeric_into<std::uint32_t>(int32))
+        ASSERT_RAISES(std::out_of_range, reader.read_numeric<std::uint32_t>())
+        ASSERT_RAISES(std::out_of_range, reader.read_bytes(4))
+        ASSERT_RAISES(std::out_of_range, reader.read_string(4))
+        ASSERT_RAISES(std::out_of_range, reader.read_size_and_bytes())
+        ASSERT_RAISES(std::out_of_range, reader.read_size_and_string())
+        ASSERT_EQUAL(size_t, 0, reader.get_position())
+        ASSERT_EQUAL(bool, false, reader.has_more_data())
+    }
+    {
+        std::string value("\x00\x00", 2);
+        size_t index = 0;
+        Amulet::BinaryReader reader(value, index);
+        std::uint32_t int32 = 0;
+        ASSERT_RAISES(std::out_of_range, reader.read_numeric_into<std::uint32_t>(int32))
+        ASSERT_RAISES(std::out_of_range, reader.read_numeric<std::uint32_t>())
+        ASSERT_RAISES(std::out_of_range, reader.read_bytes(4))
+        ASSERT_RAISES(std::out_of_range, reader.read_string(4))
+        ASSERT_RAISES(std::out_of_range, reader.read_size_and_bytes())
+        ASSERT_RAISES(std::out_of_range, reader.read_size_and_string())
+        ASSERT_EQUAL(size_t, 0, reader.get_position())
+        ASSERT_EQUAL(bool, true, reader.has_more_data())
+    }
+    {
+        std::string value("\x01\x00\x00\x00", 4);
+        size_t index = 0;
+        Amulet::BinaryReader reader(value, index);
+        std::uint32_t int32 = 0;
+        ASSERT_RAISES(std::out_of_range, reader.read_size_and_bytes<std::uint32_t>())
+        ASSERT_EQUAL(size_t, 4, reader.get_position())
+        ASSERT_EQUAL(bool, false, reader.has_more_data())
+    }
+    {
+        std::string value("\x01\x00\x00\x00", 4);
+        size_t index = 0;
+        Amulet::BinaryReader reader(value, index);
+        std::uint32_t int32 = 0;
+        ASSERT_RAISES(std::out_of_range, reader.read_size_and_string<std::uint32_t>())
+        ASSERT_EQUAL(size_t, 4, reader.get_position())
+        ASSERT_EQUAL(bool, false, reader.has_more_data())
+    }
+    {
+        std::string value("\x02\x00\x00\x00\x00", 5);
+        size_t index = 0;
+        Amulet::BinaryReader reader(value, index);
+        std::uint32_t int32 = 0;
+        ASSERT_RAISES(std::out_of_range, reader.read_size_and_bytes<std::uint32_t>())
+        ASSERT_EQUAL(size_t, 4, reader.get_position())
+        ASSERT_EQUAL(bool, true, reader.has_more_data())
+    }
+    {
+        std::string value("\x02\x00\x00\x00\x00", 5);
+        size_t index = 0;
+        Amulet::BinaryReader reader(value, index);
+        std::uint32_t int32 = 0;
+        ASSERT_RAISES(std::out_of_range, reader.read_size_and_string<std::uint32_t>())
+        ASSERT_EQUAL(size_t, 4, reader.get_position())
+        ASSERT_EQUAL(bool, true, reader.has_more_data())
+    }
+}
+
 void test_write_numeric(EndianState endian)
 {
     Amulet::BinaryWriter writer = endian == EndianState::Big ? Amulet::BinaryWriter(std::endian::big)
@@ -288,6 +356,7 @@ PYBIND11_MODULE(_test_amulet_io, m)
 
     m.def("test_read_numeric", &test_read_numeric);
     m.def("test_read_string", &test_read_string);
+    m.def("test_read_overflow", &test_read_overflow);
     m.def("test_write_numeric", &test_write_numeric);
     m.def("test_write_string", &test_write_string);
 }
