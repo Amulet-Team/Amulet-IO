@@ -20,10 +20,12 @@ endif()
 # Find dependencies
 find_package(pybind11 CONFIG REQUIRED)
 find_package(amulet_io CONFIG REQUIRED)
+find_package(amulet_test_utils CONFIG REQUIRED)
 
-pybind11_add_module(_test_amulet_io "_test_amulet_io.py.cpp")
+pybind11_add_module(_test_amulet_io "test_amulet_io/_test_amulet_io.py.cpp")
 target_compile_definitions(_test_amulet_io PRIVATE PYBIND11_DETAILED_ERROR_MESSAGES)
 target_link_libraries(_test_amulet_io PRIVATE amulet_io)
+target_link_libraries(_test_amulet_io PRIVATE amulet_test_utils)
 
 # Install
-install(TARGETS _test_amulet_io DESTINATION ".")
+install(TARGETS _test_amulet_io DESTINATION ${TEST_AMULET_IO_DIR})

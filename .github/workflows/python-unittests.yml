@@ -42,7 +42,7 @@ jobs:
       - name: Build Amulet-IO
         run: |
           pip install .[dev]
-          python tests/compile.py
+          python tools/compile_tests.py
 
       - name: Test with unittest
         run: python -m unittest discover -v -s tests
