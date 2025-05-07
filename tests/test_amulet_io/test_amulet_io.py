@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from _test_amulet_io import (
+from test_amulet_io._test_amulet_io import (
     EndianState,
     test_read_numeric,
     test_read_string,

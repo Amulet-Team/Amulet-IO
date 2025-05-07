@@ -2,33 +2,21 @@ import subprocess
 import sys
 import shutil
 import os
-import importlib.util
 
 import pybind11
+import amulet.io
+import amulet.test_utils
 
 
-def get_package_path(name: str) -> str:
-    try:
-        spec = importlib.util.find_spec(name)
-        if spec is None:
-            raise RuntimeError(f"Could not find {name}")
-        module_path = spec.origin
-        if module_path is None:
-            raise RuntimeError(f"Could not find {name}")
-        if not module_path.endswith("__init__.py"):
-            raise RuntimeError(f"{name} is not a package.")
-        return os.path.dirname(module_path).replace(os.sep, "/")
-    except:
-        print(f"Failed finding {name}. Falling back to importing.")
-        return importlib.import_module(name).__path__[0].replace(os.sep, "/")
+def fix_path(path: str) -> str:
+    return os.path.realpath(path).replace(os.sep, "/")
+
+
+RootDir = os.path.dirname(os.path.dirname(__file__))
+TestsDir = os.path.join(RootDir, "tests")
 
 
 def main() -> None:
-    os.chdir(os.path.dirname(__file__))
-
-    if os.path.isdir("build/CMakeFiles"):
-        shutil.rmtree("build/CMakeFiles")
-
     platform_args = []
     if sys.platform == "win32":
         platform_args.extend(["-G", "Visual Studio 17 2022"])
@@ -38,14 +26,20 @@ def main() -> None:
             platform_args.extend(["-A", "Win32"])
         platform_args.extend(["-T", "v143"])
 
+    os.chdir(TestsDir)
+    shutil.rmtree(os.path.join(TestsDir, "build", "CMakeFiles"), ignore_errors=True)
+
     if subprocess.run(
         [
             "cmake",
             *platform_args,
             f"-DPYTHON_EXECUTABLE={sys.executable}",
-            f"-Dpybind11_DIR={pybind11.get_cmake_dir().replace(os.sep, '/')}",
-            f"-Damulet_io_DIR={get_package_path('amulet.io')}",
-            f"-DCMAKE_INSTALL_PREFIX={os.path.dirname(__file__).replace(os.sep, '/')}",
+            f"-Dpybind11_DIR={fix_path(pybind11.get_cmake_dir())}",
+            f"-Damulet_io_DIR={fix_path(amulet.io.__path__[0])}",
+            f"-DCMAKE_INSTALL_PREFIX=install",
+            # test args
+            f"-Damulet_test_utils_DIR={fix_path(amulet.test_utils.__path__[0])}",
+            f"-DTEST_AMULET_IO_DIR={fix_path(os.path.join(TestsDir, 'test_amulet_io'))}",
             "-B",
             "build",
         ]
