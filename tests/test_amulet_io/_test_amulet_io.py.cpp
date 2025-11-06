@@ -131,11 +131,11 @@ void test_read_string(EndianState endian, bool read_offset)
     if (!read_offset) {
         ASSERT_EQUAL(size_t, 0, reader.get_position())
         ASSERT_EQUAL(bool, true, reader.has_more_data())
-        ASSERT_EQUAL(std::string, "test", reader.read_bytes(4))
+        ASSERT_EQUAL(std::string_view, "test", reader.read_bytes(4))
     }
     ASSERT_EQUAL(size_t, 4, reader.get_position())
     ASSERT_EQUAL(bool, true, reader.has_more_data())
-    ASSERT_EQUAL(std::string, "hello world", reader.read_size_and_bytes<std::uint16_t>())
+    ASSERT_EQUAL(std::string_view, "hello world", reader.read_size_and_bytes<std::uint16_t>())
     ASSERT_EQUAL(size_t, 17, reader.get_position())
     ASSERT_EQUAL(bool, true, reader.has_more_data())
     if (endian == EndianState::Default) {
