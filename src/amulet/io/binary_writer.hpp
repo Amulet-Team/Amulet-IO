@@ -136,6 +136,12 @@ public:
         write_size_and_bytes<SizeT>(_string_encoder(value));
     }
 
+    // Reserve count bytes after the existing size.
+    void reserve(size_t count)
+    {
+        _buffer.reserve(_buffer.size() + count);
+    }
+
     // Get the written buffer.
     const std::string& get_buffer()
     {
