@@ -34,7 +34,7 @@ public:
      */
     TemplateBinaryReader(
         std::string_view buffer,
-        size_t position)
+        size_t position = 0)
         requires(Endianness.is_static && !HasStringDecoder)
         : _buffer(buffer)
         , _position(position)
@@ -50,7 +50,7 @@ public:
      */
     TemplateBinaryReader(
         std::string_view buffer,
-        size_t position,
+        size_t position = 0,
         std::endian endianness = std::endian::little)
         requires(!Endianness.is_static && !HasStringDecoder)
         : _buffer(buffer)
@@ -69,7 +69,7 @@ public:
      */
     TemplateBinaryReader(
         std::string_view buffer,
-        size_t position,
+        size_t position = 0,
         StringDecoder string_decoder = [](std::string_view value) { return std::string(value); })
         requires(Endianness.is_static && HasStringDecoder)
         : _buffer(buffer)
@@ -88,7 +88,7 @@ public:
      */
     TemplateBinaryReader(
         std::string_view buffer,
-        size_t position,
+        size_t position = 0,
         std::endian endianness = std::endian::little,
         StringDecoder string_decoder = [](std::string_view value) { return std::string(value); })
         requires(!Endianness.is_static && HasStringDecoder)
@@ -267,7 +267,7 @@ public:
      */
     BinaryReader(
         std::string_view buffer,
-        size_t position,
+        size_t position = 0,
         std::endian endianness = std::endian::little,
         StringDecoder string_decoder = [](std::string_view value) { return std::string(value); })
         : TemplateBinaryReader(buffer, position, endianness, std::move(string_decoder))

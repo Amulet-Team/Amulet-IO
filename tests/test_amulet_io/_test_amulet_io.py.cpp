@@ -153,7 +153,7 @@ void test_read_overflow()
 {
     {
         std::string value("", 0);
-        Amulet::BinaryReader reader(value, 0);
+        Amulet::BinaryReader reader(value);
         std::uint32_t int32 = 0;
         ASSERT_RAISES(std::out_of_range, reader.read_numeric_into<std::uint32_t>(int32))
         ASSERT_RAISES(std::out_of_range, reader.read_numeric<std::uint32_t>())
@@ -166,7 +166,7 @@ void test_read_overflow()
     }
     {
         std::string value("\x00\x00", 2);
-        Amulet::BinaryReader reader(value, 0);
+        Amulet::BinaryReader reader(value);
         std::uint32_t int32 = 0;
         ASSERT_RAISES(std::out_of_range, reader.read_numeric_into<std::uint32_t>(int32))
         ASSERT_RAISES(std::out_of_range, reader.read_numeric<std::uint32_t>())
@@ -179,7 +179,7 @@ void test_read_overflow()
     }
     {
         std::string value("\x01\x00\x00\x00", 4);
-        Amulet::BinaryReader reader(value, 0);
+        Amulet::BinaryReader reader(value);
         std::uint32_t int32 = 0;
         ASSERT_RAISES(std::out_of_range, reader.read_size_and_bytes<std::uint32_t>())
         ASSERT_EQUAL(size_t, 4, reader.get_position())
@@ -187,7 +187,7 @@ void test_read_overflow()
     }
     {
         std::string value("\x01\x00\x00\x00", 4);
-        Amulet::BinaryReader reader(value, 0);
+        Amulet::BinaryReader reader(value);
         std::uint32_t int32 = 0;
         ASSERT_RAISES(std::out_of_range, reader.read_size_and_string<std::uint32_t>())
         ASSERT_EQUAL(size_t, 4, reader.get_position())
@@ -195,7 +195,7 @@ void test_read_overflow()
     }
     {
         std::string value("\x02\x00\x00\x00\x00", 5);
-        Amulet::BinaryReader reader(value, 0);
+        Amulet::BinaryReader reader(value);
         std::uint32_t int32 = 0;
         ASSERT_RAISES(std::out_of_range, reader.read_size_and_bytes<std::uint32_t>())
         ASSERT_EQUAL(size_t, 4, reader.get_position())
@@ -203,7 +203,7 @@ void test_read_overflow()
     }
     {
         std::string value("\x02\x00\x00\x00\x00", 5);
-        Amulet::BinaryReader reader(value, 0);
+        Amulet::BinaryReader reader(value);
         std::uint32_t int32 = 0;
         ASSERT_RAISES(std::out_of_range, reader.read_size_and_string<std::uint32_t>())
         ASSERT_EQUAL(size_t, 4, reader.get_position())
