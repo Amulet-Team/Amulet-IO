@@ -262,7 +262,7 @@ void test_read_array()
         ASSERT_EQUAL(std::uint32_t, 3, vec[2]);
     }
     {
-        Amulet::BinaryReader reader(buffer, 0);
+        Amulet::BinaryReader reader(buffer, 0, std::endian::big);
         std::vector<std::uint32_t> vec;
         ASSERT_RAISES(std::out_of_range, reader.read_numeric_array<std::uint32_t>(vec, 4));
         ASSERT_EQUAL(size_t, 0, vec.size());
