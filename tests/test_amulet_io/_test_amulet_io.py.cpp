@@ -1,3 +1,4 @@
+#include <pybind11/native_enum.h>
 #include <pybind11/pybind11.h>
 
 #include <string>
@@ -248,16 +249,47 @@ void test_write_string(EndianState endian)
     }
 }
 
+void test_read_array()
+{
+    const std::string buffer("\x00\x00\x00\x01\x00\x00\x00\x02\x00\x00\x00\x03", 12);
+    {
+        Amulet::BinaryReader reader(buffer, 0, std::endian::big);
+        std::vector<std::uint32_t> vec;
+        reader.read_numeric_array<std::uint32_t>(vec, 3);
+        ASSERT_EQUAL(size_t, 3, vec.size());
+        ASSERT_EQUAL(std::uint32_t, 1, vec[0]);
+        ASSERT_EQUAL(std::uint32_t, 2, vec[1]);
+        ASSERT_EQUAL(std::uint32_t, 3, vec[2]);
+    }
+    {
+        Amulet::BinaryReader reader(buffer, 0);
+        std::vector<std::uint32_t> vec;
+        ASSERT_RAISES(std::out_of_range, reader.read_numeric_array<std::uint32_t>(vec, 4));
+        ASSERT_EQUAL(size_t, 0, vec.size());
+    }
+}
+
+void test_reserve()
+{
+    std::string buffer;
+    Amulet::BaseBinaryWriter writer(buffer);
+    writer.reserve(1024);
+    ASSERT_LESS_EQUAL(size_t, 1024, buffer.capacity());
+}
+
 PYBIND11_MODULE(_test_amulet_io, m)
 {
-    py::enum_<EndianState>(m, "EndianState")
+    py::native_enum<EndianState>(m, "EndianState", "enum.Enum")
         .value("Default", EndianState::Default)
         .value("Big", EndianState::Big)
-        .value("Little", EndianState::Little);
+        .value("Little", EndianState::Little)
+        .finalize();
 
-    m.def("test_read_numeric", &test_read_numeric);
-    m.def("test_read_string", &test_read_string);
+    m.def("test_read_numeric", &test_read_numeric, py::arg("endian_data"), py::arg("read_offset"), py::arg("read_into"));
+    m.def("test_read_string", &test_read_string, py::arg("endian_data"), py::arg("read_offset"));
     m.def("test_read_overflow", &test_read_overflow);
-    m.def("test_write_numeric", &test_write_numeric);
-    m.def("test_write_string", &test_write_string);
+    m.def("test_write_numeric", &test_write_numeric, py::arg("endian_data"));
+    m.def("test_write_string", &test_write_string, py::arg("endian_data"));
+    m.def("test_read_array", &test_read_array);
+    m.def("test_reserve", &test_reserve);
 }

@@ -7,6 +7,8 @@ from test_amulet_io._test_amulet_io import (
     test_read_overflow,
     test_write_numeric,
     test_write_string,
+    test_read_array,
+    test_reserve,
 )
 
 
@@ -32,3 +34,9 @@ class AmuletIOTestCase(TestCase):
             with self.subTest(endian_state=endian_state):
                 test_write_numeric(endian_state)
                 test_write_string(endian_state)
+
+    def test_read_array(self) -> None:
+        test_read_array()
+
+    def test_reserve(self) -> None:
+        test_reserve()
