@@ -156,6 +156,34 @@ public:
         return value;
     }
 
+    /**
+     * Read a sequence of numeric types from the buffer into a vector-like object and fix their endianness.
+     *
+     * @param vec The vector to read into.
+     * @param count The number of values to read.
+     */
+    template <typename T, bool ValidateSize = true, typename VecT>
+        requires std::is_arithmetic_v<T>
+    void read_numeric_array(VecT& vec, size_t count)
+    {
+        if constexpr (ValidateSize) {
+            // Ensure the buffer is long enough
+            if (_buffer.size() - _position < sizeof(T) * count) {
+                throw std::out_of_range(std::string("Cannot read ") + std::to_string(count) + " * " + typeid(T).name() + " at position " + std::to_string(_position));
+            }
+        }
+
+        // Reserve to avoid resizing the buffer.
+        vec.reserve(vec.size() + count);
+
+        T value;
+        for (size_t i = 0; i < count; i++) {
+            // Read the value without bounds checking.
+            read_numeric_into<T, false>(value);
+            vec.emplace_back(value);
+        }
+    }
+
     /*
      * Read the number of bytes.
      *
