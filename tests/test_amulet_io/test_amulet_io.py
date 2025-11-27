@@ -9,6 +9,8 @@ from test_amulet_io._test_amulet_io import (
     test_write_string,
     test_read_array,
     test_reserve,
+    test_read_endianness,
+    test_write_endianness,
 )
 
 
@@ -40,3 +42,9 @@ class AmuletIOTestCase(TestCase):
 
     def test_reserve(self) -> None:
         test_reserve()
+
+    def test_read_endianness(self) -> None:
+        test_read_endianness()
+
+    def test_write_endianness(self) -> None:
+        test_write_endianness()

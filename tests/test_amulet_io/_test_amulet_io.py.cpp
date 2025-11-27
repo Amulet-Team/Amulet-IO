@@ -277,6 +277,66 @@ void test_reserve()
     ASSERT_LESS_EQUAL(size_t, 1024, buffer.capacity());
 }
 
+void test_read_endianness()
+{
+    {
+        const std::string buffer("\x00\x00\x00\x01", 4);
+        Amulet::TemplateBinaryReader<Amulet::StaticBigEndian, false> reader(buffer, 0);
+        ASSERT_EQUAL(std::uint32_t, 1, reader.read_numeric<std::uint32_t>());
+        ASSERT_RAISES(std::out_of_range, reader.read_numeric<std::uint32_t>());
+    }
+    {
+        const std::string buffer("\x01\x00\x00\x00", 4);
+        Amulet::TemplateBinaryReader<Amulet::StaticLittleEndian, false> reader(buffer, 0);
+        ASSERT_EQUAL(std::uint32_t, 1, reader.read_numeric<std::uint32_t>());
+        ASSERT_RAISES(std::out_of_range, reader.read_numeric<std::uint32_t>());
+    }
+    {
+        const std::string buffer("\x00\x00\x00\x01", 4);
+        Amulet::TemplateBinaryReader<Amulet::RuntimeEndian, false> reader(buffer, 0, std::endian::big);
+        ASSERT_EQUAL(std::uint32_t, 1, reader.read_numeric<std::uint32_t>());
+        ASSERT_RAISES(std::out_of_range, reader.read_numeric<std::uint32_t>());
+    }
+    {
+        const std::string buffer("\x01\x00\x00\x00", 4);
+        Amulet::TemplateBinaryReader<Amulet::RuntimeEndian, false> reader(buffer, 0, std::endian::little);
+        ASSERT_EQUAL(std::uint32_t, 1, reader.read_numeric<std::uint32_t>());
+        ASSERT_RAISES(std::out_of_range, reader.read_numeric<std::uint32_t>());
+    }
+}
+
+void test_write_endianness()
+{
+    {
+        std::string buffer;
+        Amulet::TemplateBaseBinaryWriter<Amulet::StaticBigEndian, false> writer(buffer);
+        writer.write_numeric<std::uint32_t>(1);
+        std::string expected("\x00\x00\x00\x01", 4);
+        ASSERT_EQUAL(std::string, expected, buffer);
+    }
+    {
+        std::string buffer;
+        Amulet::TemplateBaseBinaryWriter<Amulet::StaticLittleEndian, false> writer(buffer);
+        writer.write_numeric<std::uint32_t>(1);
+        std::string expected("\x01\x00\x00\x00", 4);
+        ASSERT_EQUAL(std::string, expected, buffer);
+    }
+    {
+        std::string buffer;
+        Amulet::TemplateBaseBinaryWriter<Amulet::RuntimeEndian, false> writer(buffer, std::endian::big);
+        writer.write_numeric<std::uint32_t>(1);
+        std::string expected("\x00\x00\x00\x01", 4);
+        ASSERT_EQUAL(std::string, expected, buffer);
+    }
+    {
+        std::string buffer;
+        Amulet::TemplateBaseBinaryWriter<Amulet::RuntimeEndian, false> writer(buffer, std::endian::little);
+        writer.write_numeric<std::uint32_t>(1);
+        std::string expected("\x01\x00\x00\x00", 4);
+        ASSERT_EQUAL(std::string, expected, buffer);
+    }
+}
+
 PYBIND11_MODULE(_test_amulet_io, m)
 {
     py::native_enum<EndianState>(m, "EndianState", "enum.Enum")
@@ -292,4 +352,6 @@ PYBIND11_MODULE(_test_amulet_io, m)
     m.def("test_write_string", &test_write_string, py::arg("endian_data"));
     m.def("test_read_array", &test_read_array);
     m.def("test_reserve", &test_reserve);
+    m.def("test_read_endianness", &test_read_endianness);
+    m.def("test_write_endianness", &test_write_endianness);
 }
