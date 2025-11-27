@@ -10,18 +10,55 @@
 #include <string>
 #include <string_view>
 
+#include "endian.hpp"
+
 namespace Amulet {
 
 typedef std::function<std::string(std::string_view)> StringDecoder;
 
-class BinaryReader {
+template <EncodedEndianness Endianness, bool HasStringDecoder>
+class TemplateBinaryReader {
 private:
-    std::string_view buffer;
-    size_t& position;
-    std::endian endianness;
-    StringDecoder string_decoder;
+    struct Empty { };
+    std::string_view _buffer;
+    size_t _position;
+    std::conditional_t<Endianness.is_static, Empty, std::endian> _endianness;
+    std::conditional_t<HasStringDecoder, StringDecoder, Empty> _string_decoder;
 
 public:
+    /*
+     * Constructor
+     *
+     * @param buffer The input bytes to read.
+     * @param position The index in the buffer to start at.
+     */
+    TemplateBinaryReader(
+        std::string_view buffer,
+        size_t position = 0)
+        requires(Endianness.is_static && !HasStringDecoder)
+        : _buffer(buffer)
+        , _position(position)
+    {
+    }
+
+    /*
+     * Constructor
+     *
+     * @param buffer The input bytes to read.
+     * @param position The index in the buffer to start at.
+     * @param endianness The endianness numerical values are stored in.
+     */
+    TemplateBinaryReader(
+        std::string_view buffer,
+        size_t position = 0,
+        std::endian endianness = std::endian::little)
+        requires(!Endianness.is_static && !HasStringDecoder)
+        : _buffer(buffer)
+        , _position(position)
+        , _endianness(endianness)
+    {
+    }
+
     /*
      * Constructor
      *
@@ -30,15 +67,35 @@ public:
      * @param endianness The endianness numerical values are stored in.
      * @param string_decoder A function to decode binary data.
      */
-    BinaryReader(
+    TemplateBinaryReader(
         std::string_view buffer,
-        size_t& position,
+        size_t position = 0,
+        StringDecoder string_decoder = [](std::string_view value) { return std::string(value); })
+        requires(Endianness.is_static && HasStringDecoder)
+        : _buffer(buffer)
+        , _position(position)
+        , _string_decoder(std::move(string_decoder))
+    {
+    }
+
+    /*
+     * Constructor
+     *
+     * @param buffer The input bytes to read.
+     * @param position The index in the buffer to start at.
+     * @param endianness The endianness numerical values are stored in.
+     * @param string_decoder A function to decode binary data.
+     */
+    TemplateBinaryReader(
+        std::string_view buffer,
+        size_t position = 0,
         std::endian endianness = std::endian::little,
         StringDecoder string_decoder = [](std::string_view value) { return std::string(value); })
-        : buffer(buffer)
-        , position(position)
-        , endianness(endianness)
-        , string_decoder(string_decoder)
+        requires(!Endianness.is_static && HasStringDecoder)
+        : _buffer(buffer)
+        , _position(position)
+        , _endianness(endianness)
+        , _string_decoder(std::move(string_decoder))
     {
     }
 
@@ -47,31 +104,42 @@ public:
      *
      * @param value The value to read into.
      */
-    template <typename T>
+    template <typename T, bool ValidateSize = true>
+        requires std::is_arithmetic_v<T>
     void read_numeric_into(T& value)
     {
-        // Ensure the buffer is long enough
-        if (position + sizeof(T) > buffer.size()) {
-            throw std::out_of_range(std::string("Cannot read ") + typeid(T).name() + " at position " + std::to_string(position));
+        if constexpr (ValidateSize) {
+            // Ensure the buffer is long enough
+            if (_buffer.size() - _position < sizeof(T)) {
+                throw std::out_of_range(std::string("Cannot read ") + typeid(T).name() + " at position " + std::to_string(_position));
+            }
         }
 
         // Create
-        const char* src = &buffer[position];
-        char* dst = (char*)&value;
+        const char* src = &_buffer[_position];
+        char* dst = reinterpret_cast<char*>(&value);
 
-        // Copy
-        if (endianness == std::endian::native) {
-            for (size_t i = 0; i < sizeof(T); i++) {
-                dst[i] = src[i];
-            }
+        if constexpr (sizeof(T) == 1) {
+            std::memcpy(dst, src, sizeof(T));
         } else {
-            for (size_t i = 0; i < sizeof(T); i++) {
-                dst[i] = src[sizeof(T) - i - 1];
+            // Copy
+            if constexpr (Endianness.is_static) {
+                if constexpr (Endianness.static_endianness == std::endian::native) {
+                    std::memcpy(dst, src, sizeof(T));
+                } else {
+                    std::reverse_copy(src, src + sizeof(T), dst);
+                }
+            } else {
+                if (_endianness == std::endian::native) {
+                    std::memcpy(dst, src, sizeof(T));
+                } else {
+                    std::reverse_copy(src, src + sizeof(T), dst);
+                }
             }
         }
 
         // Increment position
-        position += sizeof(T);
+        _position += sizeof(T);
     }
 
     /**
@@ -79,12 +147,41 @@ public:
      *
      * @return A value of the requested type.
      */
-    template <typename T>
+    template <typename T, bool ValidateSize = true>
+        requires std::is_arithmetic_v<T>
     T read_numeric()
     {
         T value;
-        read_numeric_into<T>(value);
+        read_numeric_into<T, ValidateSize>(value);
         return value;
+    }
+
+    /**
+     * Read a sequence of numeric types from the buffer into a vector-like object and fix their endianness.
+     *
+     * @param vec The vector to read into.
+     * @param count The number of values to read.
+     */
+    template <typename T, bool ValidateSize = true, typename VecT>
+        requires std::is_arithmetic_v<T>
+    void read_numeric_array(VecT& vec, size_t count)
+    {
+        if constexpr (ValidateSize) {
+            // Ensure the buffer is long enough
+            if (_buffer.size() - _position < sizeof(T) * count) {
+                throw std::out_of_range(std::string("Cannot read ") + std::to_string(count) + " * " + typeid(T).name() + " at position " + std::to_string(_position));
+            }
+        }
+
+        // Reserve to avoid resizing the buffer.
+        vec.reserve(vec.size() + count);
+
+        T value;
+        for (size_t i = 0; i < count; i++) {
+            // Read the value without bounds checking.
+            read_numeric_into<T, false>(value);
+            vec.emplace_back(value);
+        }
     }
 
     /*
@@ -93,15 +190,18 @@ public:
      * @param length The number of bytes to read.
      * @return The bytes.
      */
+    template <bool ValidateSize = true>
     std::string_view read_bytes(size_t length)
     {
-        // Ensure the buffer is long enough
-        if (position + length > buffer.size()) {
-            throw std::out_of_range("Cannot read string at position " + std::to_string(position));
+        if constexpr (ValidateSize) {
+            // Ensure the buffer is long enough
+            if (_buffer.size() - _position < length) {
+                throw std::out_of_range("Cannot read string at position " + std::to_string(_position));
+            }
         }
 
-        std::string_view value = buffer.substr(position, length);
-        position += length;
+        std::string_view value = _buffer.substr(_position, length);
+        _position += length;
         return value;
     }
 
@@ -112,8 +212,9 @@ public:
      * @return The decoded string.
      */
     std::string read_string(size_t length)
+        requires HasStringDecoder
     {
-        return string_decoder(read_bytes(length));
+        return _string_decoder(read_bytes(length));
     }
 
     /*
@@ -135,21 +236,42 @@ public:
      * @return A string decoded from the bytes.
      */
     template <typename SizeT = std::uint64_t>
+        requires HasStringDecoder
     std::string read_size_and_string()
     {
-        return string_decoder(read_size_and_bytes<SizeT>());
+        return _string_decoder(read_size_and_bytes<SizeT>());
     }
 
     // Get the current read position.
     size_t get_position()
     {
-        return position;
+        return _position;
     }
 
     // Is there more unread data.
     bool has_more_data()
     {
-        return position < buffer.size();
+        return _position < _buffer.size();
+    }
+};
+
+class BinaryReader : public TemplateBinaryReader<RuntimeEndian, true> {
+public:
+    /*
+     * Constructor
+     *
+     * @param buffer The input bytes to read.
+     * @param position The index in the buffer to start at.
+     * @param endianness The endianness numerical values are stored in.
+     * @param string_decoder A function to decode binary data.
+     */
+    BinaryReader(
+        std::string_view buffer,
+        size_t position = 0,
+        std::endian endianness = std::endian::little,
+        StringDecoder string_decoder = [](std::string_view value) { return std::string(value); })
+        : TemplateBinaryReader(buffer, position, endianness, std::move(string_decoder))
+    {
     }
 };
 
@@ -164,8 +286,7 @@ T deserialise(BinaryReader& reader)
 template <class T>
 T deserialise(std::string_view buffer)
 {
-    size_t position = 0;
-    BinaryReader reader(buffer, position);
+    BinaryReader reader(buffer, 0);
     return deserialise<T>(reader);
 }
 

@@ -14,7 +14,7 @@ def fix_path(path: str) -> str:
 RootDir = fix_path(os.path.dirname(os.path.dirname(__file__)))
 
 
-def main():
+def main() -> None:
     platform_args = []
     if sys.platform == "win32":
         platform_args.extend(["-G", "Visual Studio 17 2022"])
@@ -37,7 +37,7 @@ def main():
             f"-DCMAKE_INSTALL_PREFIX=install",
             # test args
             f"-Damulet_test_utils_DIR={fix_path(amulet.test_utils.__path__[0])}",
-            f"-DTEST_AMULET_IO_DIR={os.path.join(RootDir, 'tests', 'test_amulet_io')}",
+            f"-DBUILD_AMULET_IO_TESTS=ON",
             "-B",
             "build",
         ]

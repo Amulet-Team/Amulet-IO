@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.13)
 
 project(amulet_io LANGUAGES CXX)
 
+set(BUILD_AMULET_IO_TESTS OFF CACHE BOOL "Should tests be built?")
+
 # Set C++20
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -13,8 +15,10 @@ if (WIN32)
 	add_definitions(-D_WIN32_WINNT=0x0601)
 elseif(APPLE)
     set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15")
-else()
+elseif(UNIX)
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+else()
+    message( FATAL_ERROR "Unsupported platform. Please submit a pull request to support this platform." )
 endif()
 
 if (MSVC)
@@ -36,6 +40,6 @@ foreach(FILE ${HEADERS})
     source_group(${GROUP} FILES ${FILE})
 endforeach()
 
-if (TEST_AMULET_IO_DIR)
+if (BUILD_AMULET_IO_TESTS)
     add_subdirectory(tests)
 endif()
