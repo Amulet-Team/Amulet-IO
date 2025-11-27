@@ -37,7 +37,7 @@ def main():
             f"-DCMAKE_INSTALL_PREFIX=install",
             # test args
             f"-Damulet_test_utils_DIR={fix_path(amulet.test_utils.__path__[0])}",
-            f"-DTEST_AMULET_IO_DIR={os.path.join(RootDir, 'tests', 'test_amulet_io')}",
+            f"-DBUILD_AMULET_IO_TESTS=ON",
             "-B",
             "build",
         ]
