@@ -20,10 +20,9 @@ enum class EndianState {
 
 void test_read_numeric(EndianState endian, bool read_offset, bool read_into)
 {
-    size_t index = read_offset ? 3 : 0;
-    Amulet::BinaryReader reader = endian == EndianState::Big ? Amulet::BinaryReader(NumericReadBufferBig, index, std::endian::big)
-        : endian == EndianState::Little                      ? Amulet::BinaryReader(NumericReadBufferLittle, index, std::endian::little)
-                                                             : Amulet::BinaryReader(NumericReadBufferLittle, index);
+    Amulet::BinaryReader reader = endian == EndianState::Big ? Amulet::BinaryReader(NumericReadBufferBig, read_offset ? 3 : 0, std::endian::big)
+        : endian == EndianState::Little                      ? Amulet::BinaryReader(NumericReadBufferLittle, read_offset ? 3 : 0, std::endian::little)
+                                                             : Amulet::BinaryReader(NumericReadBufferLittle, read_offset ? 3 : 0);
     std::uint8_t int8 = 0;
     std::uint16_t int16 = 0;
     std::uint32_t int32 = 0;
@@ -94,8 +93,6 @@ void test_read_numeric(EndianState endian, bool read_offset, bool read_into)
         ASSERT_EQUAL(float, 0.0, float32)
         ASSERT_EQUAL(double, 0.0, float64)
     }
-
-    ASSERT_EQUAL(size_t, 27, index)
 }
 
 static const std::string StringReadBufferBig("test\x00\x0Bhello world t e s t\x00\x08 t e s t", 35);
@@ -124,10 +121,9 @@ std::string odd_string_encoder(std::string_view value)
 
 void test_read_string(EndianState endian, bool read_offset)
 {
-    size_t index = read_offset ? 4 : 0;
-    Amulet::BinaryReader reader = endian == EndianState::Big ? Amulet::BinaryReader(StringReadBufferBig, index, std::endian::big, odd_string_decoder)
-        : endian == EndianState::Little                      ? Amulet::BinaryReader(StringReadBufferLittle, index, std::endian::little, odd_string_decoder)
-                                                             : Amulet::BinaryReader(StringReadBufferLittle, index);
+    Amulet::BinaryReader reader = endian == EndianState::Big ? Amulet::BinaryReader(StringReadBufferBig, read_offset ? 4 : 0, std::endian::big, odd_string_decoder)
+        : endian == EndianState::Little                      ? Amulet::BinaryReader(StringReadBufferLittle, read_offset ? 4 : 0, std::endian::little, odd_string_decoder)
+                                                             : Amulet::BinaryReader(StringReadBufferLittle, read_offset ? 4 : 0);
     if (!read_offset) {
         ASSERT_EQUAL(size_t, 0, reader.get_position())
         ASSERT_EQUAL(bool, true, reader.has_more_data())
@@ -156,8 +152,7 @@ void test_read_overflow()
 {
     {
         std::string value("", 0);
-        size_t index = 0;
-        Amulet::BinaryReader reader(value, index);
+        Amulet::BinaryReader reader(value, 0);
         std::uint32_t int32 = 0;
         ASSERT_RAISES(std::out_of_range, reader.read_numeric_into<std::uint32_t>(int32))
         ASSERT_RAISES(std::out_of_range, reader.read_numeric<std::uint32_t>())
@@ -170,8 +165,7 @@ void test_read_overflow()
     }
     {
         std::string value("\x00\x00", 2);
-        size_t index = 0;
-        Amulet::BinaryReader reader(value, index);
+        Amulet::BinaryReader reader(value, 0);
         std::uint32_t int32 = 0;
         ASSERT_RAISES(std::out_of_range, reader.read_numeric_into<std::uint32_t>(int32))
         ASSERT_RAISES(std::out_of_range, reader.read_numeric<std::uint32_t>())
@@ -184,8 +178,7 @@ void test_read_overflow()
     }
     {
         std::string value("\x01\x00\x00\x00", 4);
-        size_t index = 0;
-        Amulet::BinaryReader reader(value, index);
+        Amulet::BinaryReader reader(value, 0);
         std::uint32_t int32 = 0;
         ASSERT_RAISES(std::out_of_range, reader.read_size_and_bytes<std::uint32_t>())
         ASSERT_EQUAL(size_t, 4, reader.get_position())
@@ -193,8 +186,7 @@ void test_read_overflow()
     }
     {
         std::string value("\x01\x00\x00\x00", 4);
-        size_t index = 0;
-        Amulet::BinaryReader reader(value, index);
+        Amulet::BinaryReader reader(value, 0);
         std::uint32_t int32 = 0;
         ASSERT_RAISES(std::out_of_range, reader.read_size_and_string<std::uint32_t>())
         ASSERT_EQUAL(size_t, 4, reader.get_position())
@@ -202,8 +194,7 @@ void test_read_overflow()
     }
     {
         std::string value("\x02\x00\x00\x00\x00", 5);
-        size_t index = 0;
-        Amulet::BinaryReader reader(value, index);
+        Amulet::BinaryReader reader(value, 0);
         std::uint32_t int32 = 0;
         ASSERT_RAISES(std::out_of_range, reader.read_size_and_bytes<std::uint32_t>())
         ASSERT_EQUAL(size_t, 4, reader.get_position())
@@ -211,8 +202,7 @@ void test_read_overflow()
     }
     {
         std::string value("\x02\x00\x00\x00\x00", 5);
-        size_t index = 0;
-        Amulet::BinaryReader reader(value, index);
+        Amulet::BinaryReader reader(value, 0);
         std::uint32_t int32 = 0;
         ASSERT_RAISES(std::out_of_range, reader.read_size_and_string<std::uint32_t>())
         ASSERT_EQUAL(size_t, 4, reader.get_position())
