@@ -31,6 +31,7 @@ file(GLOB_RECURSE HEADERS LIST_DIRECTORIES false ${SOURCE_PATH}/amulet/*.hpp)
 
 # Add implementation
 add_library(amulet_io INTERFACE)
+set_target_properties(amulet_io PROPERTIES FOLDER "CPP")
 target_include_directories(amulet_io INTERFACE "src")
 target_sources(amulet_io PRIVATE ${HEADERS})
 foreach(FILE ${HEADERS})

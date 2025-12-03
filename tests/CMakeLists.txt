@@ -35,6 +35,7 @@ if (NOT TARGET amulet_io)
 endif()
 
 pybind11_add_module(_test_amulet_io "test_amulet_io/_test_amulet_io.py.cpp")
+set_target_properties(_test_amulet_io PROPERTIES FOLDER "Tests")
 target_compile_definitions(_test_amulet_io PRIVATE PYBIND11_DETAILED_ERROR_MESSAGES)
 target_link_libraries(_test_amulet_io PRIVATE amulet_io)
 target_link_libraries(_test_amulet_io PRIVATE amulet_test_utils)
